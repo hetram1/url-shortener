@@ -11,6 +11,8 @@ import {
 import type { User } from "./api/auth";
 import { createUrl, getUrls } from "./api/urls";
 import type { ShortUrl } from "./api/urls";
+import { getUrlAnalytics } from "./api/analytics";
+import type { UrlAnalytics } from "./api/analytics";
 
 type AuthMode = "login" | "register";
 
@@ -26,6 +28,9 @@ function App() {
   const [createdUrl, setCreatedUrl] = useState<ShortUrl | null>(null);
   const [urls, setUrls] = useState<ShortUrl[]>([]);
   const [urlsLoading, setUrlsLoading] = useState(false);
+  const [analytics, setAnalytics] = useState<UrlAnalytics | null>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [analyticsError, setAnalyticsError] = useState("");
   const [authChecking, setAuthChecking] = useState(true);
 
   useEffect(() => {
@@ -123,6 +128,23 @@ function App() {
     }
   }
 
+  async function handleAnalytics(shortCode: string) {
+    setAnalyticsLoading(true);
+    setAnalyticsError("");
+
+    try {
+      const data = await getUrlAnalytics(shortCode);
+      setAnalytics(data);
+    } catch (error) {
+      setAnalytics(null);
+      setAnalyticsError(
+        error instanceof Error ? error.message : "Failed to load analytics",
+      );
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  }
+
   function handleLogout() {
     clearAccessToken();
     setUser(null);
@@ -131,6 +153,8 @@ function App() {
     setMessage("");
     setUrls([]);
     setCreatedUrl(null);
+    setAnalytics(null);
+    setAnalyticsError("");
   }
 
   if (authChecking) {
@@ -267,9 +291,86 @@ function App() {
                       <span>
                         {new Date(url.createdAt).toLocaleDateString()}
                       </span>
+                      <button
+                        type="button"
+                        onClick={() => void handleAnalytics(url.shortCode)}
+                      >
+                        Analytics
+                      </button>
                     </div>
                   </article>
                 ))}
+              </div>
+            )}
+
+            {analyticsLoading && (
+              <div className="empty-state">
+                <p>Loading analytics...</p>
+              </div>
+            )}
+
+            {analyticsError && (
+              <div className="empty-state">
+                <p>{analyticsError}</p>
+              </div>
+            )}
+
+            {analytics && !analyticsLoading && (
+              <div className="analytics-panel">
+                <div className="analytics-header">
+                  <div>
+                    <p className="eyebrow">ANALYTICS</p>
+                    <h3>/{analytics.shortCode}</h3>
+                  </div>
+                  <span>{analytics.clickCount} total clicks</span>
+                </div>
+
+                <div className="analytics-summary">
+                  <div>
+                    <span>Last clicked</span>
+                    <strong>
+                      {analytics.lastClickedAt
+                        ? new Date(
+                            analytics.lastClickedAt,
+                          ).toLocaleString()
+                        : "Never"}
+                    </strong>
+                  </div>
+
+                  <div>
+                    <span>Top referrers</span>
+                    <strong>
+                      {analytics.topReferrers.length > 0
+                        ? analytics.topReferrers
+                            .map(
+                              (item) =>
+                                `${item.referrer} (${item.clicks})`,
+                            )
+                            .join(", ")
+                        : "No referrers yet"}
+                    </strong>
+                  </div>
+                </div>
+
+                <div>
+                  <h4>Recent clicks</h4>
+
+                  {analytics.recentClicks.length === 0 ? (
+                    <p>No click details available.</p>
+                  ) : (
+                    <div className="recent-clicks">
+                      {analytics.recentClicks.map((click) => (
+                        <div className="recent-click" key={click.id}>
+                          <span>
+                            {new Date(click.clicked_at).toLocaleString()}
+                          </span>
+                          <span>{click.referrer || "Direct"}</span>
+                          <span>{click.ip_address || "Unknown IP"}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </section>
