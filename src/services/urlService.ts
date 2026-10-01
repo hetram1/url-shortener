@@ -5,6 +5,7 @@ import {
   UrlRecord,
 } from "../repositories/urlRepository.js";
 import { generateShortCode } from "../utils/shortCode.js";
+import { cacheUrl, getCachedUrl } from "./urlCache.js";
 
 const MAX_COLLISION_RETRIES = 5;
 
@@ -101,6 +102,18 @@ function isUniqueViolation(error: unknown): boolean {
 export async function resolveShortUrl(
   shortCode: string,
 ): Promise<UrlRecord | null> {
+  const cachedUrl = await getCachedUrl(shortCode);
+
+  if (cachedUrl) {
+    if (cachedUrl.expires_at && cachedUrl.expires_at <= new Date()) {
+      return cachedUrl;
+    }
+
+    await incrementClickCount(shortCode);
+
+    return cachedUrl;
+  }
+
   const url = await findUrlByShortCode(shortCode);
 
   if (!url) {
@@ -111,6 +124,7 @@ export async function resolveShortUrl(
     return url;
   }
 
+  await cacheUrl(url);
   await incrementClickCount(shortCode);
 
   return url;
