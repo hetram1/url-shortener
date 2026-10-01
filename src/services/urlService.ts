@@ -1,6 +1,7 @@
 import {
   createUrl,
   findUrlByShortCode,
+  findUrlsByUserId,
   recordClickEvent,
   UrlRecord,
 } from "../repositories/urlRepository.js";
@@ -150,4 +151,16 @@ export async function resolveShortUrl(
   });
 
   return url;
+}
+
+
+export async function listUserUrls(
+  userId: string,
+  limit: number = 20,
+  offset: number = 0,
+): Promise<UrlRecord[]> {
+  return findUrlsByUserId(userId, {
+    limit,
+    offset,
+  });
 }

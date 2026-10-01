@@ -226,3 +226,36 @@ export async function getTopReferrers(
 
   return result.rows;
 }
+
+
+export interface UserUrlListOptions {
+  limit: number;
+  offset: number;
+}
+
+export async function findUrlsByUserId(
+  userId: string,
+  options: UserUrlListOptions,
+): Promise<UrlRecord[]> {
+  const result = await pool.query<UrlRecord>(
+    `
+      SELECT
+        id,
+        short_code,
+        original_url,
+        created_at,
+        expires_at,
+        click_count,
+        custom_alias,
+        user_id
+      FROM urls
+      WHERE user_id = $1
+      ORDER BY created_at DESC
+      LIMIT $2
+      OFFSET $3
+    `,
+    [userId, options.limit, options.offset],
+  );
+
+  return result.rows;
+}

@@ -1,9 +1,69 @@
 import { Router } from "express";
-import { createShortUrl } from "../services/urlService.js";
+import { createShortUrl, listUserUrls } from "../services/urlService.js";
 import { requireAuth } from "../middleware/auth.js";
 import { rateLimitUrlCreation } from "../middleware/rateLimit.js";
 
 const router = Router();
+
+router.get("/", requireAuth, async (req, res) => {
+  try {
+    const rawLimit = req.query.limit;
+    const rawOffset = req.query.offset;
+
+    const limit = rawLimit === undefined
+      ? 20
+      : Number(rawLimit);
+
+    const offset = rawOffset === undefined
+      ? 0
+      : Number(rawOffset);
+
+    if (
+      !Number.isInteger(limit) ||
+      limit < 1 ||
+      limit > 100
+    ) {
+      return res.status(400).json({
+        error: "limit must be an integer between 1 and 100",
+      });
+    }
+
+    if (!Number.isInteger(offset) || offset < 0) {
+      return res.status(400).json({
+        error: "offset must be a non-negative integer",
+      });
+    }
+
+    const urls = await listUserUrls(
+      req.user!.userId,
+      limit,
+      offset,
+    );
+
+    return res.status(200).json({
+      urls: urls.map((url) => ({
+        id: url.id,
+        shortCode: url.short_code,
+        originalUrl: url.original_url,
+        createdAt: url.created_at,
+        expiresAt: url.expires_at,
+        clickCount: url.click_count,
+        customAlias: url.custom_alias,
+      })),
+      pagination: {
+        limit,
+        offset,
+        count: urls.length,
+      },
+    });
+  } catch (error: unknown) {
+    console.error("Failed to list user URLs:", error);
+
+    return res.status(500).json({
+      error: "Failed to list URLs",
+    });
+  }
+});
 
 router.post("/", requireAuth, rateLimitUrlCreation, async (req, res) => {
   try {
