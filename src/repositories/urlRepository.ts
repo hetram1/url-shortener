@@ -259,3 +259,20 @@ export async function findUrlsByUserId(
 
   return result.rows;
 }
+
+
+export async function deleteUrlByShortCode(
+  shortCode: string,
+  userId: string,
+): Promise<boolean> {
+  const result = await pool.query(
+    `
+      DELETE FROM urls
+      WHERE short_code = $1
+        AND user_id = $2
+    `,
+    [shortCode, userId],
+  );
+
+  return result.rowCount === 1;
+}

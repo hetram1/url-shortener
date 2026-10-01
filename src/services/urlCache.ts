@@ -45,3 +45,18 @@ export async function cacheUrl(url: UrlRecord): Promise<void> {
     console.error("Redis cache write failed:", error);
   }
 }
+
+
+export async function invalidateCachedUrl(
+  shortCode: string,
+): Promise<void> {
+  if (!redisClient.isReady) {
+    return;
+  }
+
+  try {
+    await redisClient.del(cacheKey(shortCode));
+  } catch (error) {
+    console.error("Redis cache invalidation failed:", error);
+  }
+}

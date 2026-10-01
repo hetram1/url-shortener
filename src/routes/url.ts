@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createShortUrl, listUserUrls } from "../services/urlService.js";
+import { createShortUrl, deleteUserUrl, listUserUrls } from "../services/urlService.js";
 import { requireAuth } from "../middleware/auth.js";
 import { rateLimitUrlCreation } from "../middleware/rateLimit.js";
 
@@ -61,6 +61,37 @@ router.get("/", requireAuth, async (req, res) => {
 
     return res.status(500).json({
       error: "Failed to list URLs",
+    });
+  }
+});
+
+router.delete("/:shortCode", requireAuth, async (req, res) => {
+  try {
+    const { shortCode } = req.params;
+
+    if (typeof shortCode !== "string") {
+      return res.status(400).json({
+        error: "Invalid short code",
+      });
+    }
+
+    const deleted = await deleteUserUrl(
+      shortCode,
+      req.user!.userId,
+    );
+
+    if (!deleted) {
+      return res.status(404).json({
+        error: "Short URL not found",
+      });
+    }
+
+    return res.status(204).send();
+  } catch (error: unknown) {
+    console.error("Failed to delete short URL:", error);
+
+    return res.status(500).json({
+      error: "Failed to delete short URL",
     });
   }
 });

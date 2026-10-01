@@ -1,12 +1,17 @@
 import {
   createUrl,
+  deleteUrlByShortCode,
   findUrlByShortCode,
   findUrlsByUserId,
   recordClickEvent,
   UrlRecord,
 } from "../repositories/urlRepository.js";
 import { generateShortCode } from "../utils/shortCode.js";
-import { cacheUrl, getCachedUrl } from "./urlCache.js";
+import {
+  cacheUrl,
+  getCachedUrl,
+  invalidateCachedUrl,
+} from "./urlCache.js";
 
 const MAX_COLLISION_RETRIES = 5;
 
@@ -163,4 +168,23 @@ export async function listUserUrls(
     limit,
     offset,
   });
+}
+
+
+export async function deleteUserUrl(
+  shortCode: string,
+  userId: string,
+): Promise<boolean> {
+  const deleted = await deleteUrlByShortCode(
+    shortCode,
+    userId,
+  );
+
+  if (!deleted) {
+    return false;
+  }
+
+  await invalidateCachedUrl(shortCode);
+
+  return true;
 }
