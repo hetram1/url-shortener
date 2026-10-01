@@ -1,4 +1,9 @@
-import { createUrl, UrlRecord } from "../repositories/urlRepository.js";
+import {
+  createUrl,
+  findUrlByShortCode,
+  incrementClickCount,
+  UrlRecord,
+} from "../repositories/urlRepository.js";
 import { generateShortCode } from "../utils/shortCode.js";
 
 const MAX_COLLISION_RETRIES = 5;
@@ -44,4 +49,22 @@ function isUniqueViolation(error: unknown): boolean {
   }
 
   return false;
+}
+
+export async function resolveShortUrl(
+  shortCode: string,
+): Promise<UrlRecord | null> {
+  const url = await findUrlByShortCode(shortCode);
+
+  if (!url) {
+    return null;
+  }
+
+  if (url.expires_at && url.expires_at <= new Date()) {
+    return url;
+  }
+
+  await incrementClickCount(shortCode);
+
+  return url;
 }
