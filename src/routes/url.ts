@@ -133,7 +133,8 @@ router.put("/:shortCode", requireAuth, async (req, res) => {
       error instanceof Error &&
       (
         error.message === "Original URL is required" ||
-        error.message === "Original URL must be a valid URL"
+        error.message === "Original URL must be a valid URL" ||
+        error.message === "Expiration date must be in the future"
       )
     ) {
       return res.status(400).json({
@@ -239,7 +240,8 @@ router.post("/", requireAuth, rateLimitUrlCreation, async (req, res) => {
         error.message ===
           "Custom alias can only contain letters, numbers, hyphens, and underscores" ||
         error.message === "Custom alias must be between 3 and 50 characters" ||
-        error.message === "Custom alias is already in use"
+        error.message === "Custom alias is already in use" ||
+        error.message === "Expiration date must be in the future"
       )
     ) {
       return res.status(400).json({

@@ -43,6 +43,10 @@ export async function createShortUrl(
     throw new Error("Original URL must be a valid URL");
   }
 
+  if (expiresAt && expiresAt <= new Date()) {
+    throw new Error("Expiration date must be in the future");
+  }
+
   let alias = customAlias?.trim() || null;
 
   if (alias) {
@@ -207,6 +211,10 @@ export async function updateUserUrl(
     new URL(normalizedUrl);
   } catch {
     throw new Error("Original URL must be a valid URL");
+  }
+
+  if (expiresAt && expiresAt <= new Date()) {
+    throw new Error("Expiration date must be in the future");
   }
 
   const updatedUrl = await updateUrlByShortCode(
