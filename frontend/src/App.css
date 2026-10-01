@@ -312,3 +312,67 @@ button {
   font-size: 14px;
   word-break: break-all;
 }
+
+.links-list {
+  display: grid;
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid #e5e8ef;
+  border-radius: 10px;
+}
+
+.link-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 18px;
+  background: #ffffff;
+}
+
+.link-row + .link-row {
+  border-top: 1px solid #e5e8ef;
+}
+
+.link-main {
+  min-width: 0;
+}
+
+.link-main a {
+  color: #5966d8;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.link-main a:hover {
+  text-decoration: underline;
+}
+
+.link-main p {
+  margin: 6px 0 0;
+  overflow: hidden;
+  color: #7a8394;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.link-stats {
+  display: flex;
+  flex-shrink: 0;
+  gap: 18px;
+  color: #7a8394;
+  font-size: 12px;
+}
+
+@media (max-width: 700px) {
+  .link-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .link-stats {
+    gap: 12px;
+  }
+}

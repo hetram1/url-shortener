@@ -42,3 +42,18 @@ export async function createUrl(
     clickCount: response.clickCount,
   };
 }
+
+interface ListUrlsResponse {
+  urls: ShortUrl[];
+  pagination: {
+    limit: number;
+    offset: number;
+    count: number;
+  };
+}
+
+export async function getUrls(): Promise<ShortUrl[]> {
+  const response = await apiRequest<ListUrlsResponse>("/urls");
+
+  return response.urls;
+}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import "./App.css";
 import {
@@ -9,7 +9,7 @@ import {
   saveAccessToken,
 } from "./api/auth";
 import type { User } from "./api/auth";
-import { createUrl } from "./api/urls";
+import { createUrl, getUrls } from "./api/urls";
 import type { ShortUrl } from "./api/urls";
 
 type AuthMode = "login" | "register";
@@ -24,6 +24,41 @@ function App() {
   const [originalUrl, setOriginalUrl] = useState("");
   const [customAlias, setCustomAlias] = useState("");
   const [createdUrl, setCreatedUrl] = useState<ShortUrl | null>(null);
+  const [urls, setUrls] = useState<ShortUrl[]>([]);
+  const [urlsLoading, setUrlsLoading] = useState(false);
+  const [authChecking, setAuthChecking] = useState(true);
+
+  useEffect(() => {
+    async function restoreSession() {
+      const token = localStorage.getItem("accessToken");
+
+      if (!token) {
+        setAuthChecking(false);
+        return;
+      }
+
+      try {
+        const currentUser = await getCurrentUser();
+        setUser(currentUser);
+
+        setUrlsLoading(true);
+
+        try {
+          const userUrls = await getUrls();
+          setUrls(userUrls);
+        } finally {
+          setUrlsLoading(false);
+        }
+      } catch {
+        clearAccessToken();
+        setUser(null);
+      } finally {
+        setAuthChecking(false);
+      }
+    }
+
+    void restoreSession();
+  }, []);
 
   async function handleAuth(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -47,6 +82,15 @@ function App() {
       const currentUser = await getCurrentUser();
       setUser(currentUser);
       setMessage("");
+
+      setUrlsLoading(true);
+
+      try {
+        const userUrls = await getUrls();
+        setUrls(userUrls);
+      } finally {
+        setUrlsLoading(false);
+      }
     } catch (error) {
       setMessage(
         error instanceof Error ? error.message : "Something went wrong",
@@ -66,6 +110,7 @@ function App() {
     try {
       const shortUrl = await createUrl(originalUrl, customAlias);
       setCreatedUrl(shortUrl);
+      setUrls((currentUrls) => [shortUrl, ...currentUrls]);
       setOriginalUrl("");
       setCustomAlias("");
       setMessage("Short URL created successfully.");
@@ -84,6 +129,19 @@ function App() {
     setEmail("");
     setPassword("");
     setMessage("");
+    setUrls([]);
+    setCreatedUrl(null);
+  }
+
+  if (authChecking) {
+    return (
+      <div className="auth-page">
+        <div className="auth-card">
+          <h1>Shortly</h1>
+          <p>Restoring your session...</p>
+        </div>
+      </div>
+    );
   }
 
   if (user) {
@@ -180,10 +238,40 @@ function App() {
               </div>
             </div>
 
-            <div className="empty-state">
-              <h4>No links yet</h4>
-              <p>Create your first short URL to see it here.</p>
-            </div>
+            {urlsLoading ? (
+              <div className="empty-state">
+                <p>Loading your links...</p>
+              </div>
+            ) : urls.length === 0 ? (
+              <div className="empty-state">
+                <h4>No links yet</h4>
+                <p>Create your first short URL to see it here.</p>
+              </div>
+            ) : (
+              <div className="links-list">
+                {urls.map((url) => (
+                  <article className="link-row" key={url.id}>
+                    <div className="link-main">
+                      <a
+                        href={`http://localhost:3001/${url.shortCode}`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        http://localhost:3001/{url.shortCode}
+                      </a>
+                      <p>{url.originalUrl}</p>
+                    </div>
+
+                    <div className="link-stats">
+                      <span>{url.clickCount} clicks</span>
+                      <span>
+                        {new Date(url.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
           </section>
         </main>
       </div>
