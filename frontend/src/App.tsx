@@ -9,6 +9,8 @@ import {
   saveAccessToken,
 } from "./api/auth";
 import type { User } from "./api/auth";
+import { createUrl } from "./api/urls";
+import type { ShortUrl } from "./api/urls";
 
 type AuthMode = "login" | "register";
 
@@ -19,6 +21,9 @@ function App() {
   const [user, setUser] = useState<User | null>(null);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [originalUrl, setOriginalUrl] = useState("");
+  const [customAlias, setCustomAlias] = useState("");
+  const [createdUrl, setCreatedUrl] = useState<ShortUrl | null>(null);
 
   async function handleAuth(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -42,6 +47,28 @@ function App() {
       const currentUser = await getCurrentUser();
       setUser(currentUser);
       setMessage("");
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "Something went wrong",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleCreateUrl(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    setMessage("");
+    setCreatedUrl(null);
+    setLoading(true);
+
+    try {
+      const shortUrl = await createUrl(originalUrl, customAlias);
+      setCreatedUrl(shortUrl);
+      setOriginalUrl("");
+      setCustomAlias("");
+      setMessage("Short URL created successfully.");
     } catch (error) {
       setMessage(
         error instanceof Error ? error.message : "Something went wrong",
@@ -96,23 +123,50 @@ function App() {
               </div>
             </div>
 
-            <form className="url-form">
+            <form className="url-form" onSubmit={handleCreateUrl}>
               <label>
                 Destination URL
                 <input
                   type="url"
+                  value={originalUrl}
+                  onChange={(event) => setOriginalUrl(event.target.value)}
                   placeholder="https://example.com/very-long-url"
+                  required
                 />
               </label>
 
               <label>
                 Custom alias <span>(optional)</span>
-                <input type="text" placeholder="my-link" />
+                <input
+                  type="text"
+                  value={customAlias}
+                  onChange={(event) => setCustomAlias(event.target.value)}
+                  placeholder="my-link"
+                />
               </label>
 
-              <button type="submit" className="primary-button">
-                Create short URL
+              <button
+                type="submit"
+                className="primary-button"
+                disabled={loading}
+              >
+                {loading ? "Creating..." : "Create short URL"}
               </button>
+
+              {message && <p className="form-message">{message}</p>}
+
+              {createdUrl && (
+                <div className="created-url">
+                  <span>Your short URL</span>
+                  <a
+                    href={`http://localhost:3001/${createdUrl.shortCode}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    http://localhost:3001/{createdUrl.shortCode}
+                  </a>
+                </div>
+              )}
             </form>
           </section>
 

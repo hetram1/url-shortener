@@ -291,3 +291,24 @@ button {
   color: #5966d8;
   font-weight: 600;
 }
+
+.created-url {
+  display: grid;
+  gap: 6px;
+  margin-top: 2px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #f5f7fb;
+}
+
+.created-url span {
+  color: #30394a;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.created-url a {
+  color: #5966d8;
+  font-size: 14px;
+  word-break: break-all;
+}
