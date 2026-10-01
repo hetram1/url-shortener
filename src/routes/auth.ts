@@ -3,6 +3,7 @@ import {
   loginUser,
   registerUser,
 } from "../services/authService.js";
+import { requireAuth } from "../middleware/auth.js";
 
 const router = Router();
 
@@ -112,6 +113,12 @@ router.post("/login", async (req, res) => {
       error: "Failed to login user",
     });
   }
+});
+
+router.get("/me", requireAuth, (req, res) => {
+  return res.status(200).json({
+    user: req.user,
+  });
 });
 
 export default router;
