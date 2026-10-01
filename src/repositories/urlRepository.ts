@@ -7,20 +7,34 @@ export interface UrlRecord {
   created_at: Date;
   expires_at: Date | null;
   click_count: string;
+  custom_alias: string | null;
 }
 
 export async function createUrl(
   shortCode: string,
   originalUrl: string,
   expiresAt: Date | null = null,
+  customAlias: string | null = null,
 ): Promise<UrlRecord> {
   const result = await pool.query<UrlRecord>(
     `
-      INSERT INTO urls (short_code, original_url, expires_at)
-      VALUES ($1, $2, $3)
-      RETURNING id, short_code, original_url, created_at, expires_at, click_count
+      INSERT INTO urls (
+        short_code,
+        original_url,
+        expires_at,
+        custom_alias
+      )
+      VALUES ($1, $2, $3, $4)
+      RETURNING
+        id,
+        short_code,
+        original_url,
+        created_at,
+        expires_at,
+        click_count,
+        custom_alias
     `,
-    [shortCode, originalUrl, expiresAt],
+    [shortCode, originalUrl, expiresAt, customAlias],
   );
 
   return result.rows[0];
@@ -31,7 +45,14 @@ export async function findUrlByShortCode(
 ): Promise<UrlRecord | null> {
   const result = await pool.query<UrlRecord>(
     `
-      SELECT id, short_code, original_url, created_at, expires_at, click_count
+      SELECT
+        id,
+        short_code,
+        original_url,
+        created_at,
+        expires_at,
+        click_count,
+        custom_alias
       FROM urls
       WHERE short_code = $1
     `,

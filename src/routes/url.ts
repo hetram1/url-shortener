@@ -5,11 +5,17 @@ const router = Router();
 
 router.post("/", async (req, res) => {
   try {
-    const { originalUrl, expiresAt } = req.body;
+    const { originalUrl, expiresAt, customAlias } = req.body;
 
     if (typeof originalUrl !== "string") {
       return res.status(400).json({
         error: "originalUrl must be a string",
+      });
+    }
+
+    if (customAlias !== undefined && customAlias !== null && typeof customAlias !== "string") {
+      return res.status(400).json({
+        error: "customAlias must be a string",
       });
     }
 
@@ -34,6 +40,7 @@ router.post("/", async (req, res) => {
     const url = await createShortUrl({
       originalUrl,
       expiresAt: parsedExpiresAt,
+      customAlias,
     });
 
     return res.status(201).json({
@@ -43,13 +50,18 @@ router.post("/", async (req, res) => {
       createdAt: url.created_at,
       expiresAt: url.expires_at,
       clickCount: url.click_count,
+      customAlias: url.custom_alias,
     });
   } catch (error: unknown) {
     if (
       error instanceof Error &&
       (
         error.message === "Original URL is required" ||
-        error.message === "Original URL must be a valid URL"
+        error.message === "Original URL must be a valid URL" ||
+        error.message ===
+          "Custom alias can only contain letters, numbers, hyphens, and underscores" ||
+        error.message === "Custom alias must be between 3 and 50 characters" ||
+        error.message === "Custom alias is already in use"
       )
     ) {
       return res.status(400).json({
