@@ -1,4 +1,6 @@
 import express from "express";
+import swaggerUi from "swagger-ui-express";
+import { swaggerDocument } from "./config/swagger.js";
 import healthRouter from "./routes/health.js";
 import urlRouter from "./routes/url.js";
 import redirectRouter from "./routes/redirect.js";
@@ -9,6 +11,9 @@ import { errorHandler } from "./middleware/errorHandler.js";
 const app = express();
 
 app.use(express.json());
+
+app.use("/docs", swaggerUi.serve);
+app.get("/docs", swaggerUi.setup(swaggerDocument));
 
 app.use("/health", healthRouter);
 app.use("/auth", authRouter);
