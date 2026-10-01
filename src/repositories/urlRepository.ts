@@ -8,6 +8,7 @@ export interface UrlRecord {
   expires_at: Date | null;
   click_count: string;
   custom_alias: string | null;
+  user_id: string | null;
 }
 
 export async function createUrl(
@@ -15,6 +16,7 @@ export async function createUrl(
   originalUrl: string,
   expiresAt: Date | null = null,
   customAlias: string | null = null,
+  userId: string | null = null,
 ): Promise<UrlRecord> {
   const result = await pool.query<UrlRecord>(
     `
@@ -22,9 +24,10 @@ export async function createUrl(
         short_code,
         original_url,
         expires_at,
-        custom_alias
+        custom_alias,
+        user_id
       )
-      VALUES ($1, $2, $3, $4)
+      VALUES ($1, $2, $3, $4, $5)
       RETURNING
         id,
         short_code,
@@ -32,9 +35,10 @@ export async function createUrl(
         created_at,
         expires_at,
         click_count,
-        custom_alias
+        custom_alias,
+        user_id
     `,
-    [shortCode, originalUrl, expiresAt, customAlias],
+    [shortCode, originalUrl, expiresAt, customAlias, userId],
   );
 
   return result.rows[0];

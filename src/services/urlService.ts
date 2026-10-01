@@ -13,6 +13,7 @@ export interface CreateShortUrlInput {
   originalUrl: string;
   expiresAt?: Date | null;
   customAlias?: string | null;
+  userId: string;
 }
 
 export async function createShortUrl(
@@ -22,6 +23,7 @@ export async function createShortUrl(
     originalUrl,
     expiresAt = null,
     customAlias = null,
+    userId,
   } = input;
 
   if (!originalUrl || !originalUrl.trim()) {
@@ -55,6 +57,7 @@ export async function createShortUrl(
         originalUrl.trim(),
         expiresAt,
         alias,
+        userId,
       );
     } catch (error: unknown) {
       if (isUniqueViolation(error)) {
@@ -74,6 +77,7 @@ export async function createShortUrl(
         originalUrl.trim(),
         expiresAt,
         null,
+        userId,
       );
     } catch (error: unknown) {
       if (isUniqueViolation(error)) {

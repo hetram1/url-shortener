@@ -1,10 +1,11 @@
 import { Router } from "express";
 import { createShortUrl } from "../services/urlService.js";
+import { requireAuth } from "../middleware/auth.js";
 import { rateLimitUrlCreation } from "../middleware/rateLimit.js";
 
 const router = Router();
 
-router.post("/", rateLimitUrlCreation, async (req, res) => {
+router.post("/", requireAuth, rateLimitUrlCreation, async (req, res) => {
   try {
     const { originalUrl, expiresAt, customAlias } = req.body;
 
@@ -42,6 +43,7 @@ router.post("/", rateLimitUrlCreation, async (req, res) => {
       originalUrl,
       expiresAt: parsedExpiresAt,
       customAlias,
+      userId: req.user!.userId,
     });
 
     return res.status(201).json({
