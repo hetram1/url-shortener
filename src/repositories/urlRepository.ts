@@ -125,3 +125,100 @@ export async function recordClickEvent(
     client.release();
   }
 }
+
+export interface UrlAnalytics {
+  short_code: string;
+  original_url: string;
+  created_at: Date;
+  click_count: string;
+  last_clicked_at: Date | null;
+}
+
+export interface ClickEvent {
+  id: string;
+  clicked_at: Date;
+  ip_address: string | null;
+  user_agent: string | null;
+  referrer: string | null;
+}
+
+export interface ReferrerCount {
+  referrer: string;
+  clicks: string;
+}
+
+export async function getUrlAnalytics(
+  shortCode: string,
+): Promise<UrlAnalytics | null> {
+  const result = await pool.query<UrlAnalytics>(
+    `
+      SELECT
+        u.short_code,
+        u.original_url,
+        u.created_at,
+        u.click_count,
+        MAX(c.clicked_at) AS last_clicked_at
+      FROM urls u
+      LEFT JOIN url_clicks c
+        ON c.url_id = u.id
+      WHERE u.short_code = $1
+      GROUP BY
+        u.id,
+        u.short_code,
+        u.original_url,
+        u.created_at,
+        u.click_count
+    `,
+    [shortCode],
+  );
+
+  return result.rows[0] ?? null;
+}
+
+export async function getRecentClickEvents(
+  shortCode: string,
+  limit: number = 20,
+): Promise<ClickEvent[]> {
+  const result = await pool.query<ClickEvent>(
+    `
+      SELECT
+        c.id,
+        c.clicked_at,
+        c.ip_address,
+        c.user_agent,
+        c.referrer
+      FROM url_clicks c
+      INNER JOIN urls u
+        ON u.id = c.url_id
+      WHERE u.short_code = $1
+      ORDER BY c.clicked_at DESC
+      LIMIT $2
+    `,
+    [shortCode, limit],
+  );
+
+  return result.rows;
+}
+
+export async function getTopReferrers(
+  shortCode: string,
+  limit: number = 10,
+): Promise<ReferrerCount[]> {
+  const result = await pool.query<ReferrerCount>(
+    `
+      SELECT
+        COALESCE(referrer, 'Direct') AS referrer,
+        COUNT(*)::text AS clicks
+      FROM url_clicks c
+      INNER JOIN urls u
+        ON u.id = c.url_id
+      WHERE u.short_code = $1
+      GROUP BY COALESCE(referrer, 'Direct')
+      ORDER BY COUNT(*) DESC
+      LIMIT $2
+    `,
+    [shortCode, limit],
+  );
+
+  return result.rows;
+}
