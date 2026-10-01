@@ -153,6 +153,7 @@ export interface ReferrerCount {
 
 export async function getUrlAnalytics(
   shortCode: string,
+  userId: string,
 ): Promise<UrlAnalytics | null> {
   const result = await pool.query<UrlAnalytics>(
     `
@@ -166,6 +167,7 @@ export async function getUrlAnalytics(
       LEFT JOIN url_clicks c
         ON c.url_id = u.id
       WHERE u.short_code = $1
+        AND u.user_id = $2
       GROUP BY
         u.id,
         u.short_code,
@@ -173,7 +175,7 @@ export async function getUrlAnalytics(
         u.created_at,
         u.click_count
     `,
-    [shortCode],
+    [shortCode, userId],
   );
 
   return result.rows[0] ?? null;

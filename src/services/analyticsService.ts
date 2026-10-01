@@ -4,8 +4,8 @@ import {
   getUrlAnalytics,
 } from "../repositories/urlRepository.js";
 
-export async function getAnalytics(shortCode: string) {
-  const analytics = await getUrlAnalytics(shortCode);
+export async function getAnalytics(shortCode: string, userId: string) {
+  const analytics = await getUrlAnalytics(shortCode, userId);
 
   if (!analytics) {
     return null;

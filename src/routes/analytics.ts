@@ -1,13 +1,14 @@
 import { Router } from "express";
+import { requireAuth } from "../middleware/auth.js";
 import { getAnalytics } from "../services/analyticsService.js";
 
 const router = Router();
 
-router.get("/:shortCode/analytics", async (req, res) => {
+router.get("/:shortCode/analytics", requireAuth, async (req, res) => {
   try {
-    const { shortCode } = req.params;
+    const shortCode = String(req.params.shortCode);
 
-    const analytics = await getAnalytics(shortCode);
+    const analytics = await getAnalytics(shortCode, req.user!.userId);
 
     if (!analytics) {
       return res.status(404).json({

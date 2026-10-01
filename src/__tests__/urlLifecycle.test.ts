@@ -56,6 +56,42 @@ describe("URL lifecycle", () => {
     expect(Number(response.body.clickCount)).toBeGreaterThanOrEqual(1);
   });
 
+  it("requires authentication for click analytics", async () => {
+    const response = await request(app).get(
+      `/urls/${shortCode}/analytics`,
+    );
+
+    expect(response.status).toBe(401);
+  });
+
+  it("only allows the URL owner to view click analytics", async () => {
+    const otherUserEmail = `analytics-other-${Date.now()}@example.com`;
+
+    await request(app)
+      .post("/auth/register")
+      .send({
+        email: otherUserEmail,
+        password: "StrongPassword123!",
+      })
+      .expect(201);
+
+    const login = await request(app)
+      .post("/auth/login")
+      .send({
+        email: otherUserEmail,
+        password: "StrongPassword123!",
+      })
+      .expect(200);
+
+    const otherUserToken = login.body.accessToken;
+
+    const response = await request(app)
+      .get(`/urls/${shortCode}/analytics`)
+      .set("Authorization", `Bearer ${otherUserToken}`);
+
+    expect(response.status).toBe(404);
+  });
+
   it("updates the destination", async () => {
     const response = await request(app)
       .put(`/urls/${shortCode}`)
