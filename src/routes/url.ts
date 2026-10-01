@@ -45,6 +45,18 @@ router.post("/", async (req, res) => {
       clickCount: url.click_count,
     });
   } catch (error: unknown) {
+    if (
+      error instanceof Error &&
+      (
+        error.message === "Original URL is required" ||
+        error.message === "Original URL must be a valid URL"
+      )
+    ) {
+      return res.status(400).json({
+        error: error.message,
+      });
+    }
+
     console.error("Failed to create short URL:", error);
 
     return res.status(500).json({

@@ -22,6 +22,12 @@ export async function createShortUrl(
     throw new Error("Original URL is required");
   }
 
+  try {
+    new URL(originalUrl.trim());
+  } catch {
+    throw new Error("Original URL must be a valid URL");
+  }
+
   for (let attempt = 0; attempt < MAX_COLLISION_RETRIES; attempt += 1) {
     const shortCode = generateShortCode();
 
