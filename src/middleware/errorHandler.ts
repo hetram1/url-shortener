@@ -1,5 +1,11 @@
 import { Request, Response, NextFunction } from "express";
 
+type HttpError = Error & {
+  status?: number;
+  statusCode?: number;
+  expose?: boolean;
+};
+
 export function errorHandler(
   error: unknown,
   req: Request,
@@ -10,6 +16,22 @@ export function errorHandler(
 
   if (res.headersSent) {
     next(error);
+    return;
+  }
+
+  const httpError = error as HttpError;
+
+  const status =
+    httpError.statusCode ??
+    httpError.status ??
+    500;
+
+  if (status >= 400 && status < 500) {
+    res.status(status).json({
+      error: status === 400
+        ? "Invalid request"
+        : "Request failed",
+    });
     return;
   }
 
