@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { createShortUrl } from "../services/urlService.js";
+import { rateLimitUrlCreation } from "../middleware/rateLimit.js";
 
 const router = Router();
 
-router.post("/", async (req, res) => {
+router.post("/", rateLimitUrlCreation, async (req, res) => {
   try {
     const { originalUrl, expiresAt, customAlias } = req.body;
 
