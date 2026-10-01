@@ -1,7 +1,7 @@
 import {
   createUrl,
   findUrlByShortCode,
-  incrementClickCount,
+  recordClickEvent,
   UrlRecord,
 } from "../repositories/urlRepository.js";
 import { generateShortCode } from "../utils/shortCode.js";
@@ -99,8 +99,15 @@ function isUniqueViolation(error: unknown): boolean {
   return false;
 }
 
+export interface ClickMetadata {
+  ipAddress: string | null;
+  userAgent: string | null;
+  referrer: string | null;
+}
+
 export async function resolveShortUrl(
   shortCode: string,
+  clickMetadata?: ClickMetadata,
 ): Promise<UrlRecord | null> {
   const cachedUrl = await getCachedUrl(shortCode);
 
@@ -109,7 +116,12 @@ export async function resolveShortUrl(
       return cachedUrl;
     }
 
-    await incrementClickCount(shortCode);
+    await recordClickEvent({
+      urlId: cachedUrl.id,
+      ipAddress: clickMetadata?.ipAddress ?? null,
+      userAgent: clickMetadata?.userAgent ?? null,
+      referrer: clickMetadata?.referrer ?? null,
+    });
 
     return cachedUrl;
   }
@@ -125,7 +137,13 @@ export async function resolveShortUrl(
   }
 
   await cacheUrl(url);
-  await incrementClickCount(shortCode);
+
+  await recordClickEvent({
+    urlId: url.id,
+    ipAddress: clickMetadata?.ipAddress ?? null,
+    userAgent: clickMetadata?.userAgent ?? null,
+    referrer: clickMetadata?.referrer ?? null,
+  });
 
   return url;
 }

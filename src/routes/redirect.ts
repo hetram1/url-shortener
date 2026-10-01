@@ -7,7 +7,11 @@ router.get("/:shortCode", async (req, res) => {
   try {
     const { shortCode } = req.params;
 
-    const url = await resolveShortUrl(shortCode);
+    const url = await resolveShortUrl(shortCode, {
+      ipAddress: req.ip ?? null,
+      userAgent: req.get("user-agent") ?? null,
+      referrer: req.get("referer") ?? null,
+    });
 
     if (!url) {
       return res.status(404).json({
