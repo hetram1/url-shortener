@@ -1,5 +1,10 @@
 import { Router } from "express";
-import { createShortUrl, deleteUserUrl, listUserUrls } from "../services/urlService.js";
+import {
+  createShortUrl,
+  deleteUserUrl,
+  listUserUrls,
+  updateUserUrl,
+} from "../services/urlService.js";
 import { requireAuth } from "../middleware/auth.js";
 import { rateLimitUrlCreation } from "../middleware/rateLimit.js";
 
@@ -61,6 +66,85 @@ router.get("/", requireAuth, async (req, res) => {
 
     return res.status(500).json({
       error: "Failed to list URLs",
+    });
+  }
+});
+
+router.put("/:shortCode", requireAuth, async (req, res) => {
+  try {
+    const { shortCode } = req.params;
+
+    if (typeof shortCode !== "string") {
+      return res.status(400).json({
+        error: "Invalid short code",
+      });
+    }
+
+    const { originalUrl, expiresAt } = req.body;
+
+    if (typeof originalUrl !== "string") {
+      return res.status(400).json({
+        error: "originalUrl must be a string",
+      });
+    }
+
+    if (expiresAt !== undefined && expiresAt !== null && typeof expiresAt !== "string") {
+      return res.status(400).json({
+        error: "expiresAt must be an ISO date string or null",
+      });
+    }
+
+    let parsedExpiresAt: Date | null = null;
+
+    if (expiresAt !== undefined && expiresAt !== null) {
+      parsedExpiresAt = new Date(expiresAt);
+
+      if (Number.isNaN(parsedExpiresAt.getTime())) {
+        return res.status(400).json({
+          error: "expiresAt must be a valid ISO date",
+        });
+      }
+    }
+
+    const url = await updateUserUrl(
+      shortCode,
+      req.user!.userId,
+      originalUrl,
+      parsedExpiresAt,
+    );
+
+    if (!url) {
+      return res.status(404).json({
+        error: "Short URL not found",
+      });
+    }
+
+    return res.status(200).json({
+      id: url.id,
+      shortCode: url.short_code,
+      originalUrl: url.original_url,
+      createdAt: url.created_at,
+      expiresAt: url.expires_at,
+      clickCount: url.click_count,
+      customAlias: url.custom_alias,
+    });
+  } catch (error: unknown) {
+    if (
+      error instanceof Error &&
+      (
+        error.message === "Original URL is required" ||
+        error.message === "Original URL must be a valid URL"
+      )
+    ) {
+      return res.status(400).json({
+        error: error.message,
+      });
+    }
+
+    console.error("Failed to update short URL:", error);
+
+    return res.status(500).json({
+      error: "Failed to update short URL",
     });
   }
 });

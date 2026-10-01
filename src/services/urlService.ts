@@ -2,6 +2,7 @@ import {
   createUrl,
   deleteUrlByShortCode,
   findUrlByShortCode,
+  updateUrlByShortCode,
   findUrlsByUserId,
   recordClickEvent,
   UrlRecord,
@@ -187,4 +188,39 @@ export async function deleteUserUrl(
   await invalidateCachedUrl(shortCode);
 
   return true;
+}
+
+
+export async function updateUserUrl(
+  shortCode: string,
+  userId: string,
+  originalUrl: string,
+  expiresAt: Date | null,
+): Promise<UrlRecord | null> {
+  if (!originalUrl || !originalUrl.trim()) {
+    throw new Error("Original URL is required");
+  }
+
+  const normalizedUrl = originalUrl.trim();
+
+  try {
+    new URL(normalizedUrl);
+  } catch {
+    throw new Error("Original URL must be a valid URL");
+  }
+
+  const updatedUrl = await updateUrlByShortCode(
+    shortCode,
+    userId,
+    normalizedUrl,
+    expiresAt,
+  );
+
+  if (!updatedUrl) {
+    return null;
+  }
+
+  await invalidateCachedUrl(shortCode);
+
+  return updatedUrl;
 }

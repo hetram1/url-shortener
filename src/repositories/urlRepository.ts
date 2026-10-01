@@ -276,3 +276,39 @@ export async function deleteUrlByShortCode(
 
   return result.rowCount === 1;
 }
+
+
+export async function updateUrlByShortCode(
+  shortCode: string,
+  userId: string,
+  originalUrl: string,
+  expiresAt: Date | null,
+): Promise<UrlRecord | null> {
+  const result = await pool.query<UrlRecord>(
+    `
+      UPDATE urls
+      SET
+        original_url = $1,
+        expires_at = $2
+      WHERE short_code = $3
+        AND user_id = $4
+      RETURNING
+        id,
+        short_code,
+        original_url,
+        created_at,
+        expires_at,
+        click_count,
+        custom_alias,
+        user_id
+    `,
+    [
+      originalUrl,
+      expiresAt,
+      shortCode,
+      userId,
+    ],
+  );
+
+  return result.rows[0] ?? null;
+}
