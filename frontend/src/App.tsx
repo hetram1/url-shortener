@@ -9,7 +9,7 @@ import {
   saveAccessToken,
 } from "./api/auth";
 import type { User } from "./api/auth";
-import { createUrl, getUrls } from "./api/urls";
+import { createUrl, deleteUrl, getUrls, updateUrl } from "./api/urls";
 import type { ShortUrl } from "./api/urls";
 import { getUrlAnalytics } from "./api/analytics";
 import type { UrlAnalytics } from "./api/analytics";
@@ -31,6 +31,10 @@ function App() {
   const [analytics, setAnalytics] = useState<UrlAnalytics | null>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [analyticsError, setAnalyticsError] = useState("");
+  const [editingUrl, setEditingUrl] = useState<ShortUrl | null>(null);
+  const [editOriginalUrl, setEditOriginalUrl] = useState("");
+  const [editCustomAlias, setEditCustomAlias] = useState("");
+  const [editLoading, setEditLoading] = useState(false);
   const [authChecking, setAuthChecking] = useState(true);
 
   useEffect(() => {
@@ -125,6 +129,84 @@ function App() {
       );
     } finally {
       setLoading(false);
+    }
+  }
+
+  function startEditing(url: ShortUrl) {
+    setEditingUrl(url);
+    setEditOriginalUrl(url.originalUrl);
+    setEditCustomAlias(url.customAlias ?? "");
+    setMessage("");
+  }
+
+  function cancelEditing() {
+    setEditingUrl(null);
+    setEditOriginalUrl("");
+    setEditCustomAlias("");
+  }
+
+  async function handleUpdate(event: FormEvent) {
+    event.preventDefault();
+
+    if (!editingUrl) {
+      return;
+    }
+
+    setEditLoading(true);
+    setMessage("");
+
+    try {
+      const updatedUrl = await updateUrl(
+        editingUrl.shortCode,
+        editOriginalUrl,
+        editCustomAlias,
+      );
+
+      setUrls((currentUrls) =>
+        currentUrls.map((url) =>
+          url.id === updatedUrl.id ? updatedUrl : url,
+        ),
+      );
+
+      cancelEditing();
+      setMessage("URL updated successfully.");
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "Failed to update URL",
+      );
+    } finally {
+      setEditLoading(false);
+    }
+  }
+
+  async function handleDelete(shortCode: string) {
+    const confirmed = window.confirm(
+      "Delete this shortened URL? This cannot be undone.",
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setMessage("");
+
+    try {
+      await deleteUrl(shortCode);
+
+      setUrls((currentUrls) =>
+        currentUrls.filter((url) => url.shortCode !== shortCode),
+      );
+
+      if (analytics?.shortCode === shortCode) {
+        setAnalytics(null);
+        setAnalyticsError("");
+      }
+
+      setMessage("URL deleted successfully.");
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "Failed to delete URL",
+      );
     }
   }
 
@@ -293,6 +375,18 @@ function App() {
                       </span>
                       <button
                         type="button"
+                        onClick={() => startEditing(url)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleDelete(url.shortCode)}
+                      >
+                        Delete
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => void handleAnalytics(url.shortCode)}
                       >
                         Analytics
@@ -301,6 +395,48 @@ function App() {
                   </article>
                 ))}
               </div>
+            )}
+
+            {editingUrl && (
+              <form className="edit-panel" onSubmit={handleUpdate}>
+                <div className="edit-header">
+                  <div>
+                    <p className="eyebrow">EDIT URL</p>
+                    <h3>/{editingUrl.shortCode}</h3>
+                  </div>
+                  <button type="button" onClick={cancelEditing}>
+                    Cancel
+                  </button>
+                </div>
+
+                <label>
+                  Destination URL
+                  <input
+                    type="url"
+                    value={editOriginalUrl}
+                    onChange={(event) =>
+                      setEditOriginalUrl(event.target.value)
+                    }
+                    required
+                  />
+                </label>
+
+                <label>
+                  Custom alias
+                  <input
+                    type="text"
+                    value={editCustomAlias}
+                    onChange={(event) =>
+                      setEditCustomAlias(event.target.value)
+                    }
+                    placeholder="Optional"
+                  />
+                </label>
+
+                <button type="submit" disabled={editLoading}>
+                  {editLoading ? "Saving..." : "Save changes"}
+                </button>
+              </form>
             )}
 
             {analyticsLoading && (

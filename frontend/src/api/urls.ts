@@ -57,3 +57,39 @@ export async function getUrls(): Promise<ShortUrl[]> {
 
   return response.urls;
 }
+
+export async function updateUrl(
+  shortCode: string,
+  originalUrl: string,
+  customAlias?: string,
+): Promise<ShortUrl> {
+  const response = await apiRequest<CreateUrlResponse>(
+    `/urls/${encodeURIComponent(shortCode)}`,
+    {
+      method: "PUT",
+      body: JSON.stringify({
+        originalUrl,
+        customAlias: customAlias || undefined,
+      }),
+    },
+  );
+
+  return {
+    id: response.id,
+    shortCode: response.shortCode,
+    originalUrl: response.originalUrl,
+    customAlias: response.customAlias,
+    createdAt: response.createdAt,
+    expiresAt: response.expiresAt,
+    clickCount: response.clickCount,
+  };
+}
+
+export async function deleteUrl(shortCode: string): Promise<void> {
+  await apiRequest<void>(
+    `/urls/${encodeURIComponent(shortCode)}`,
+    {
+      method: "DELETE",
+    },
+  );
+}
