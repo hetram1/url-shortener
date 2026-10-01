@@ -235,11 +235,16 @@ export interface UserUrlListOptions {
   offset: number;
 }
 
+export interface UserUrlListResult {
+  urls: UrlRecord[];
+  total: number;
+}
+
 export async function findUrlsByUserId(
   userId: string,
   options: UserUrlListOptions,
-): Promise<UrlRecord[]> {
-  const result = await pool.query<UrlRecord>(
+): Promise<UserUrlListResult> {
+  const result = await pool.query<UrlRecord & { total_count: string }>(
     `
       SELECT
         id,
@@ -249,7 +254,8 @@ export async function findUrlsByUserId(
         expires_at,
         click_count,
         custom_alias,
-        user_id
+        user_id,
+        COUNT(*) OVER() AS total_count
       FROM urls
       WHERE user_id = $1
       ORDER BY created_at DESC
@@ -259,7 +265,12 @@ export async function findUrlsByUserId(
     [userId, options.limit, options.offset],
   );
 
-  return result.rows;
+  return {
+    urls: result.rows.map(({ total_count: _totalCount, ...url }) => url),
+    total: result.rows.length > 0
+      ? Number(result.rows[0].total_count)
+      : 0,
+  };
 }
 
 

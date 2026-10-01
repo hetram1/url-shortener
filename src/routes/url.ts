@@ -41,14 +41,14 @@ router.get("/", requireAuth, asyncHandler(async (req, res) => {
       });
     }
 
-    const urls = await listUserUrls(
+    const result = await listUserUrls(
       req.user!.userId,
       limit,
       offset,
     );
 
     return res.status(200).json({
-      urls: urls.map((url) => ({
+      urls: result.urls.map((url) => ({
         id: url.id,
         shortCode: url.short_code,
         originalUrl: url.original_url,
@@ -60,7 +60,7 @@ router.get("/", requireAuth, asyncHandler(async (req, res) => {
       pagination: {
         limit,
         offset,
-        count: urls.length,
+        count: result.total,
       },
     });
   } catch (error: unknown) {

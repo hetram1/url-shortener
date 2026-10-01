@@ -28,6 +28,8 @@ function App() {
   const [createdUrl, setCreatedUrl] = useState<ShortUrl | null>(null);
   const [urls, setUrls] = useState<ShortUrl[]>([]);
   const [urlsLoading, setUrlsLoading] = useState(false);
+  const [urlPage, setUrlPage] = useState(0);
+  const [urlPageCount, setUrlPageCount] = useState(0);
   const [analytics, setAnalytics] = useState<UrlAnalytics | null>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [analyticsError, setAnalyticsError] = useState("");
@@ -36,6 +38,27 @@ function App() {
   const [editCustomAlias, setEditCustomAlias] = useState("");
   const [editLoading, setEditLoading] = useState(false);
   const [authChecking, setAuthChecking] = useState(true);
+
+  const urlsPerPage = 5;
+
+  async function loadUrls(page = 0) {
+    setUrlsLoading(true);
+
+    try {
+      const userUrls = await getUrls(
+        urlsPerPage,
+        page * urlsPerPage,
+      );
+
+      setUrls(userUrls.urls);
+      setUrlPage(page);
+      setUrlPageCount(
+        Math.ceil(userUrls.pagination.count / urlsPerPage),
+      );
+    } finally {
+      setUrlsLoading(false);
+    }
+  }
 
   useEffect(() => {
     async function restoreSession() {
@@ -50,14 +73,7 @@ function App() {
         const currentUser = await getCurrentUser();
         setUser(currentUser);
 
-        setUrlsLoading(true);
-
-        try {
-          const userUrls = await getUrls();
-          setUrls(userUrls);
-        } finally {
-          setUrlsLoading(false);
-        }
+        await loadUrls(0);
       } catch {
         clearAccessToken();
         setUser(null);
@@ -92,14 +108,7 @@ function App() {
       setUser(currentUser);
       setMessage("");
 
-      setUrlsLoading(true);
-
-      try {
-        const userUrls = await getUrls();
-        setUrls(userUrls);
-      } finally {
-        setUrlsLoading(false);
-      }
+      await loadUrls(0);
     } catch (error) {
       setMessage(
         error instanceof Error ? error.message : "Something went wrong",
@@ -394,6 +403,32 @@ function App() {
                     </div>
                   </article>
                 ))}
+              </div>
+            )}
+
+            {urlPageCount > 1 && (
+              <div className="pagination">
+                <button
+                  type="button"
+                  onClick={() => void loadUrls(urlPage - 1)}
+                  disabled={urlPage === 0 || urlsLoading}
+                >
+                  Previous
+                </button>
+
+                <span>
+                  Page {urlPage + 1} of {urlPageCount}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => void loadUrls(urlPage + 1)}
+                  disabled={
+                    urlPage + 1 >= urlPageCount || urlsLoading
+                  }
+                >
+                  Next
+                </button>
               </div>
             )}
 

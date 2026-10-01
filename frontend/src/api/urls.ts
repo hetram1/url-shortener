@@ -43,19 +43,24 @@ export async function createUrl(
   };
 }
 
-interface ListUrlsResponse {
-  urls: ShortUrl[];
-  pagination: {
-    limit: number;
-    offset: number;
-    count: number;
-  };
+export interface UrlPagination {
+  limit: number;
+  offset: number;
+  count: number;
 }
 
-export async function getUrls(): Promise<ShortUrl[]> {
-  const response = await apiRequest<ListUrlsResponse>("/urls");
+export interface PaginatedUrls {
+  urls: ShortUrl[];
+  pagination: UrlPagination;
+}
 
-  return response.urls;
+export async function getUrls(
+  limit = 5,
+  offset = 0,
+): Promise<PaginatedUrls> {
+  return apiRequest<PaginatedUrls>(
+    `/urls?limit=${limit}&offset=${offset}`,
+  );
 }
 
 export async function updateUrl(

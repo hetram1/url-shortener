@@ -6,6 +6,7 @@ import {
   findUrlsByUserId,
   recordClickEvent,
   UrlRecord,
+  UserUrlListResult,
 } from "../repositories/urlRepository.js";
 import { generateShortCode } from "../utils/shortCode.js";
 import {
@@ -168,7 +169,7 @@ export async function listUserUrls(
   userId: string,
   limit: number = 20,
   offset: number = 0,
-): Promise<UrlRecord[]> {
+): Promise<UserUrlListResult> {
   return findUrlsByUserId(userId, {
     limit,
     offset,
