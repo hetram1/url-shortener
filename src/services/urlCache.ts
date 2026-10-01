@@ -21,7 +21,15 @@ export async function getCachedUrl(
       return null;
     }
 
-    return JSON.parse(value) as UrlRecord;
+    const parsed = JSON.parse(value) as UrlRecord;
+
+    return {
+      ...parsed,
+      created_at: new Date(parsed.created_at),
+      expires_at: parsed.expires_at
+        ? new Date(parsed.expires_at)
+        : null,
+    };
   } catch (error) {
     console.error("Redis cache read failed:", error);
     return null;
