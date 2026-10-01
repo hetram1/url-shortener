@@ -1,12 +1,12 @@
 import { pool } from "../config/database.js";
 
 export interface UrlRecord {
-  id: number;
+  id: string;
   short_code: string;
   original_url: string;
   created_at: Date;
   expires_at: Date | null;
-  click_count: number;
+  click_count: string;
 }
 
 export async function createUrl(
