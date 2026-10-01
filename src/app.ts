@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 import swaggerUi from "swagger-ui-express";
 import { swaggerDocument } from "./config/swagger.js";
 import healthRouter from "./routes/health.js";
@@ -9,6 +10,12 @@ import authRouter from "./routes/auth.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 
 const app = express();
+
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+  }),
+);
 
 app.use(express.json());
 
