@@ -6,11 +6,12 @@ import {
   updateUserUrl,
 } from "../services/urlService.js";
 import { requireAuth } from "../middleware/auth.js";
+import { asyncHandler } from "../middleware/asyncHandler.js";
 import { rateLimitUrlCreation } from "../middleware/rateLimit.js";
 
 const router = Router();
 
-router.get("/", requireAuth, async (req, res) => {
+router.get("/", requireAuth, asyncHandler(async (req, res) => {
   try {
     const rawLimit = req.query.limit;
     const rawOffset = req.query.offset;
@@ -68,9 +69,9 @@ router.get("/", requireAuth, async (req, res) => {
       error: "Failed to list URLs",
     });
   }
-});
+}));
 
-router.put("/:shortCode", requireAuth, async (req, res) => {
+router.put("/:shortCode", requireAuth, asyncHandler(async (req, res) => {
   try {
     const { shortCode } = req.params;
 
@@ -148,9 +149,9 @@ router.put("/:shortCode", requireAuth, async (req, res) => {
       error: "Failed to update short URL",
     });
   }
-});
+}));
 
-router.delete("/:shortCode", requireAuth, async (req, res) => {
+router.delete("/:shortCode", requireAuth, asyncHandler(async (req, res) => {
   try {
     const { shortCode } = req.params;
 
@@ -179,9 +180,9 @@ router.delete("/:shortCode", requireAuth, async (req, res) => {
       error: "Failed to delete short URL",
     });
   }
-});
+}));
 
-router.post("/", requireAuth, rateLimitUrlCreation, async (req, res) => {
+router.post("/", requireAuth, rateLimitUrlCreation, asyncHandler(async (req, res) => {
   try {
     const { originalUrl, expiresAt, customAlias } = req.body;
 
@@ -255,6 +256,6 @@ router.post("/", requireAuth, rateLimitUrlCreation, async (req, res) => {
       error: "Failed to create short URL",
     });
   }
-});
+}));
 
 export default router;
