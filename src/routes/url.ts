@@ -8,6 +8,7 @@ import {
 import { requireAuth } from "../middleware/auth.js";
 import { asyncHandler } from "../middleware/asyncHandler.js";
 import { rateLimitUrlCreation } from "../middleware/rateLimit.js";
+import { createUrlSchema } from "../schemas/urlSchema.js";
 
 const router = Router();
 
@@ -184,29 +185,20 @@ router.delete("/:shortCode", requireAuth, asyncHandler(async (req, res) => {
 
 router.post("/", requireAuth, rateLimitUrlCreation, asyncHandler(async (req, res) => {
   try {
-    const { originalUrl, expiresAt, customAlias } = req.body;
+    const parsed = createUrlSchema.safeParse(req.body);
 
-    if (typeof originalUrl !== "string") {
+    if (!parsed.success) {
       return res.status(400).json({
-        error: "originalUrl must be a string",
+        error: "Invalid request body",
+        details: parsed.error.issues,
       });
     }
 
-    if (customAlias !== undefined && customAlias !== null && typeof customAlias !== "string") {
-      return res.status(400).json({
-        error: "customAlias must be a string",
-      });
-    }
+    const { originalUrl, expiresAt, customAlias } = parsed.data;
 
     let parsedExpiresAt: Date | null = null;
 
     if (expiresAt !== undefined && expiresAt !== null) {
-      if (typeof expiresAt !== "string") {
-        return res.status(400).json({
-          error: "expiresAt must be an ISO date string",
-        });
-      }
-
       parsedExpiresAt = new Date(expiresAt);
 
       if (Number.isNaN(parsedExpiresAt.getTime())) {
